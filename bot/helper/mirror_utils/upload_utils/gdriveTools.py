@@ -1,8 +1,7 @@
 import os
-import pickle
 import urllib.parse as urlparse
 from urllib.parse import parse_qs
-
+import httplib2
 import re
 import json
 import requests
@@ -15,13 +14,14 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from googleapiclient.http import MediaFileUpload
 from tenacity import *
+from oauth2client.client import OAuth2Credentials
 
 from telegram import InlineKeyboardMarkup
 from bot.helper.telegram_helper import button_build
 from telegraph import Telegraph
 
 from bot import parent_id, DOWNLOAD_DIR, IS_TEAM_DRIVE, INDEX_URL, \
-    USE_SERVICE_ACCOUNTS, download_dict, telegraph_token, BUTTON_THREE_NAME, BUTTON_THREE_URL, BUTTON_FOUR_NAME, BUTTON_FOUR_URL, BUTTON_FIVE_NAME, BUTTON_FIVE_URL, SHORTENER, SHORTENER_API
+    USE_SERVICE_ACCOUNTS, CRED_JSON, download_dict, telegraph_token, BUTTON_THREE_NAME, BUTTON_THREE_URL, BUTTON_FOUR_NAME, BUTTON_FOUR_URL, BUTTON_FIVE_NAME, BUTTON_FIVE_URL, SHORTENER, SHORTENER_API
 from bot.helper.ext_utils.bot_utils import *
 from bot.helper.ext_utils.fs_utils import get_mime_type
 
@@ -33,7 +33,6 @@ TELEGRAPHLIMIT = 95
 
 class GoogleDriveHelper:
     def __init__(self, name=None, listener=None):
-        self.__G_DRIVE_TOKEN_FILE = "token.pickle"
         # Check https://developers.google.com/drive/scopes for all available scopes
         self.__OAUTH_SCOPE = ['https://www.googleapis.com/auth/drive']
         # Redirect URI for installed apps, can be left as is
@@ -444,27 +443,15 @@ class GoogleDriveHelper:
         # Get credentials
         credentials = None
         if not USE_SERVICE_ACCOUNTS:
-            if os.path.exists(self.__G_DRIVE_TOKEN_FILE):
-                with open(self.__G_DRIVE_TOKEN_FILE, 'rb') as f:
-                    credentials = pickle.load(f)
-            if credentials is None or not credentials.valid:
-                if credentials and credentials.expired and credentials.refresh_token:
-                    credentials.refresh(Request())
-                else:
-                    flow = InstalledAppFlow.from_client_secrets_file(
-                        'credentials.json', self.__OAUTH_SCOPE)
-                    LOGGER.info(flow)
-                    credentials = flow.run_console(port=0)
-
-                # Save the credentials for the next run
-                with open(self.__G_DRIVE_TOKEN_FILE, 'wb') as token:
-                    pickle.dump(credentials, token)
+            crds = OAuth2Credentials.from_json(CRED_JSON)
+            crds.refresh(httplib2.Http())
+            http = crds.authorize(httplib2.Http())
         else:
             LOGGER.info(f"Authorizing with {SERVICE_ACCOUNT_INDEX}.json service account")
             credentials = service_account.Credentials.from_service_account_file(
                 f'accounts/{SERVICE_ACCOUNT_INDEX}.json',
                 scopes=self.__OAUTH_SCOPE)
-        return build('drive', 'v3', credentials=credentials, cache_discovery=False)
+        return build('drive', 'v3', http=http, cache_discovery=False)
 
     def edit_telegraph(self):
         nxt_page = 1 
@@ -482,8 +469,8 @@ class GoogleDriveHelper:
                     nxt_page += 1
             Telegraph(access_token=telegraph_token).edit_page(path = self.path[prev_page],
                                  title = 'Mirror Bot Search',
-                                 author_name='Mirror Bot',
-                                 author_url='https://github.com/magneto261290/magneto-python-aria',
+                                 author_name='Avijneyam',
+                                 author_url='https://github.com/Avijneyam/python-aria2',
                                  html_content=content)
         return
 
@@ -557,8 +544,8 @@ class GoogleDriveHelper:
             for content in self.telegraph_content :
                 self.path.append(Telegraph(access_token=telegraph_token).create_page(
                                                         title = 'Mirror Bot Search',
-                                                        author_name='Mirror Bot',
-                                                        author_url='https://github.com/magneto261290/magneto-python-aria',
+                                                        author_name='Avijneyam',
+                                                        author_url='https://github.com/Avijneyam/python-aria2',
                                                         html_content=content
                                                         )['path'])
 
