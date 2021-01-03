@@ -1,4 +1,4 @@
-> lhtk4q0k@notua.com
+
 
 # How to deploy in Heroku?
 Hit the deploy to heroku button and follow the further instructions in the screen:
