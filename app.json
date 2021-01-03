@@ -7,9 +7,9 @@
     "mirror",
     "googledrive"
   ],
-  "repository": "https://github.com/Avijneyam/python-aria2",
-  "success_url": "https://github.com/Avijneyam/python-aria2",
-  "website": "https://github.com/Avijneyam/python-aria2",  
+  "repository": "https://github.com/GokuMUI7/magneto-heroku",
+  "success_url": "https://github.com/GokuMUI7/magneto-heroku",
+  "website": "https://github.com/GokuMUI7/magneto-heroku",  
   "env": {
     "BOT_TOKEN": {
       "description": "The telegram bot token that you get from @BotFather",
